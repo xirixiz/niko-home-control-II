@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import threading
@@ -93,7 +94,10 @@ class CoCo:
         client = mqtt.Client(client_id="homeassistant-" + str(uuid.uuid1()), protocol=MQTT_PROTOCOL,
                              transport=MQTT_TRANSPORT)
         client.username_pw_set(username, password)
-        client.tls_set(ca_path)
+
+        # Configure TLS asynchronously (ensure this is called with asyncio)
+        asyncio.run(self.async_tls_set(client, ca_path))
+        
         client.tls_insecure_set(True)
 
         self._client = client
@@ -114,6 +118,10 @@ class CoCo:
     @property
     def address(self):
         return self._address
+
+    async def async_tls_set(self, client, ca_path):
+        client.tls_set(ca_path)
+        await asyncio.sleep(0)
 
     def __del__(self):
         self._keep_thread_running = False
